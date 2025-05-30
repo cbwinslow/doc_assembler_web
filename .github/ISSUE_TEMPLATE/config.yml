@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/cbwinslow/doc_assembler_web/tree/main/docs
+    about: Check our documentation before creating an issue
+  - name: Discussions
+    url: https://github.com/cbwinslow/doc_assembler_web/discussions
+    about: Please ask and answer questions here
+

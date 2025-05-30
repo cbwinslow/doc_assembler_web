@@ -1,0 +1,55 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'services/web/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'services/web/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: services/web/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd services/web
+        npm ci
+        
+    - name: Build
+      run: |
+        cd services/web
+        npm run build
+      
+    - name: Run tests
+      run: |
+        cd services/web
+        npm test
+        
+    - name: Run ESLint
+      run: |
+        cd services/web
+        npm run lint
+        
+    - name: Check formatting
+      run: |
+        cd services/web
+        npm run format:check
+
