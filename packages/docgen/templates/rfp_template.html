@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Request for Proposal - {{ metadata.project_title }}</title>
+    <link rel="stylesheet" href="rfp_template.css">
+</head>
+<body>
+    <div class="rfp-document">
+        <header class="document-header">
+            <div class="rfp-info">
+                <h1>Request for Proposal</h1>
+                <h2>{{ metadata.project_title }}</h2>
+                <div class="rfp-metadata">
+                    <table class="metadata-table">
+                        <tr>
+                            <th>RFP Number:</th>
+                            <td>{{ metadata.rfp_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Issue Date:</th>
+                            <td>{{ metadata.issue_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Submission Deadline:</th>
+                            <td class="deadline">{{ metadata.submission_deadline }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="contact-info">
+                <h3>Contact Information</h3>
+                <table class="contact-table">
+                    <tr>
+                        <th>Contracting Authority:</th>
+                        <td>{{ metadata.contracting_authority }}</td>
+                    </tr>
+                    <tr>
+                        <th>Contact Person:</th>
+                        <td>{{ metadata.contact_person }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ metadata.contact_email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Phone:</th>
+                        <td>{{ metadata.contact_phone }}</td>
+                    </tr>
+                </table>
+            </div>
+        </header>
+
+        <nav class="table-of-contents">
+            <h2>Table of Contents</h2>
+            <ol>
+                <li><a href="#executive-summary">Executive Summary</a></li>
+                <li><a href="#company-information">Company Information</a></li>
+                <li><a href="#project-overview">Project Overview</a></li>
+                <li><a href="#scope-of-work">Scope of Work</a></li>
+                <li><a href="#requirements">Requirements</a></li>
+                <li><a href="#timeline">Timeline</a></li>
+                <li><a href="#proposal-guidelines">Proposal Guidelines</a></li>
+                <li><a href="#evaluation-criteria">Evaluation Criteria</a></li>
+                <li><a href="#terms-conditions">Terms and Conditions</a></li>
+                <li><a href="#submission-instructions">Submission Instructions</a></li>
+            </ol>
+        </nav>
+
+        <main>
+            <section id="executive-summary" class="section">
+                <h2>1. Executive Summary</h2>
+                <div class="summary-box">
+                    <h3>Project Overview</h3>
+                    {{ executive_summary.project_overview }}
+                    
+                    <h3>Objectives</h3>
+                    {{ executive_summary.objectives }}
+                    
+                    <h3>Expected Outcomes</h3>
+                    {{ executive_summary.expectations }}
+                    
+                    <div class="timeline-summary">
+                        <h3>Key Dates</h3>
+                        {{ executive_summary.timeline_summary }}
+                    </div>
+                </div>
+            </section>
+
+            <section id="company-information" class="section">
+                <h2>2. Company Information</h2>
+                <div class="company-background">
+                    <h3>Background</h3>
+                    {{ company_information.background }}
+                </div>
+                <div class="company-mission">
+                    <h3>Mission and Values</h3>
+                    {{ company_information.mission }}
+                </div>
+                <div class="current-state">
+                    <h3>Current Situation</h3>
+                    {{ company_information.current_state }}
+                </div>
+                <div class="project-context">
+                    <h3>Project Context</h3>
+                    {{ company_information.project_context }}
+                </div>
+            </section>
+
+            <section id="scope-of-work" class="section">
+                <h2>3. Scope of Work</h2>
+                <div class="deliverables">
+                    <h3>Required Deliverables</h3>
+                    <div class="deliverables-grid">
+                        {{ scope_of_work.deliverables }}
+                    </div>
+                </div>
+                <div class="specifications">
+                    <h3>Technical Specifications</h3>
+                    <table class="specs-table">
+                        {{ scope_of_work.specifications }}
+                    </table>
+                </div>
+                <div class="requirements">
+                    <h3>Functional Requirements</h3>
+                    {{ scope_of_work.requirements }}
+                </div>
+                <div class="exclusions alert-box">
+                    <h3>Exclusions</h3>
+                    {{ scope_of_work.exclusions }}
+                </div>
+            </section>
+
+            <section id="requirements" class="section">
+                <h2>4. Requirements</h2>
+                <div class="requirements-grid">
+                    <div class="requirement-card">
+                        <h3>Technical Requirements</h3>
+                        {{ requirements.technical }}
+                    </div>
+                    <div class="requirement-card">
+                        <h3>Functional Requirements</h3>
+                        {{ requirements.functional }}
+                    </div>
+                    <div class="requirement-card">
+                        <h3>Operational Requirements</h3>
+                        {{ requirements.operational }}
+                    </div>
+                    <div class="requirement-card">
+                        <h3>Compliance Requirements</h3>
+                        {{ requirements.compliance }}
+                    </div>
+                    <div class="requirement-card important">
+                        <h3>Security Requirements</h3>
+                        {{ requirements.security }}
+                    </div>
+                </div>
+            </section>
+
+            <section id="timeline" class="section">
+                <h2>5. Timeline</h2>
+                <div class="timeline-container">
+                    <div class="schedule">
+                        <h3>Project Schedule</h3>
+                        {{ timeline.schedule }}
+                    </div>
+                    <div class="milestones">
+                        <h3>Key Milestones</h3>
+                        <div class="milestone-grid">
+                            {{ timeline.milestones }}
+                        </div>
+                    </div>
+                    <div class="deliverable-dates">
+                        <h3>Deliverable Due Dates</h3>
+                        <table class="dates-table">
+                            {{ timeline.deliverable_dates }}
+                        </table>
+                    </div>
+                    <div class="review-periods">
+                        <h3>Review Periods</h3>
+                        {{ timeline.review_periods }}
+                    </div>
+                </div>
+            </section>
+
+            <section id="evaluation-criteria" class="section">
+                <h2>6. Evaluation Criteria</h2>
+                <div class="criteria-grid">
+                    <div class="criteria-card">
+                        <h3>Technical Criteria ({{ evaluation_criteria.weights.technical }}%)</h3>
+                        {{ evaluation_criteria.technical_criteria }}
+                    </div>
+                    <div class="criteria-card">
+                        <h3>Management Criteria ({{ evaluation_criteria.weights.management }}%)</h3>
+                        {{ evaluation_criteria.management_criteria }}
+                    </div>
+                    <div class="criteria-card">
+                        <h3>Cost Criteria ({{ evaluation_criteria.weights.cost }}%)</h3>
+                        {{ evaluation_criteria.cost_criteria }}
+                    </div>
+                </div>
+                <div class="scoring-system">
+                    <h3>Scoring Methodology</h3>
+                    {{ evaluation_criteria.scoring_system }}
+                </div>
+            </section>
+
+            <section id="submission-instructions" class="section important">
+                <h2>7. Submission Instructions</h2>
+                <div class="submission-box">
+                    <div class="deadline-info alert">
+                        <h3>Submission Deadline</h3>
+                        {{ submission_instructions.deadline }}
+                    </div>
+                    <div class="submission-method">
+                        <h3>Submission Method</h3>
+                        {{ submission_instructions.method }}
+                    </div>
+                    <div class="format-requirements">
+                        <h3>Required Formats</h3>
+                        {{ submission_instructions.format }}
+                    </div>
+                    <div class="confirmation-process">
+                        <h3>Confirmation Process</h3>
+                        {{ submission_instructions.confirmation }}
+                    </div>
+                </div>
+            </section>
+
+            <section id="terms-conditions" class="section">
+                <h2>8. Terms and Conditions</h2>
+                <div class="terms-grid">
+                    <div class="terms-card">
+                        <h3>Legal Requirements</h3>
+                        {{ terms_conditions.legal_terms }}
+                    </div>
+                    <div class="terms-card">
+                        <h3>Contract Terms</h3>
+                        {{ terms_conditions.contractual_terms }}
+                    </div>
+                    <div class="terms-card">
+                        <h3>Intellectual Property</h3>
+                        {{ terms_conditions.intellectual_property }}
+                    </div>
+                    <div class="terms-card important">
+                        <h3>Confidentiality</h3>
+                        {{ terms_conditions.confidentiality }}
+                    </div>
+                    <div class="terms-card">
+                        <h3>Payment Terms</h3>
+                        {{ terms_conditions.payment_terms }}
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p class="classification">{{ metadata.classification }}</p>
+                <p class="rfp-number">RFP #{{ metadata.rfp_number }}</p>
+                <p class="page-number">Page <span class="current-page"></span></p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
+

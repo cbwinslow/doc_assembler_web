@@ -1,0 +1,79 @@
+{
+    "name": "executive_summary",
+    "description": "Executive Summary template for business proposals and project overviews",
+    "template_type": "html",
+    "required_fields": [
+        "business_context",
+        "problem_statement",
+        "proposed_solution",
+        "benefits",
+        "financial_impact",
+        "implementation",
+        "recommendations"
+    ],
+    "metadata_template": {
+        "document_type": "Executive Summary",
+        "project_name": "",
+        "prepared_for": "",
+        "prepared_by": "",
+        "date": "",
+        "version": "1.0",
+        "classification": "Confidential"
+    },
+    "section_descriptions": {
+        "business_context": {
+            "background": "Company or project background",
+            "market_position": "Current market position",
+            "strategic_goals": "Strategic objectives"
+        },
+        "problem_statement": {
+            "current_situation": "Current situation or challenge",
+            "impact": "Business impact of the problem",
+            "urgency": "Why action is needed now"
+        },
+        "proposed_solution": {
+            "overview": "Solution overview",
+            "key_features": "Main features or components",
+            "differentiators": "Unique value propositions"
+        },
+        "benefits": {
+            "strategic_benefits": "Strategic advantages",
+            "operational_benefits": "Operational improvements",
+            "financial_benefits": "Financial benefits"
+        },
+        "financial_impact": {
+            "costs": "Implementation and ongoing costs",
+            "savings": "Expected savings or revenue",
+            "roi": "Return on investment analysis"
+        },
+        "implementation": {
+            "timeline": "High-level implementation timeline",
+            "resources": "Required resources",
+            "risks": "Key risks and mitigation"
+        },
+        "recommendations": {
+            "proposed_actions": "Recommended actions",
+            "next_steps": "Immediate next steps",
+            "success_criteria": "Success metrics"
+        }
+    },
+    "validation_rules": {
+        "business_context": {
+            "required": true,
+            "max_length": 500
+        },
+        "problem_statement": {
+            "required": true,
+            "max_length": 300
+        },
+        "financial_impact": {
+            "required": true,
+            "min_sections": 2
+        },
+        "recommendations": {
+            "required": true,
+            "min_length": 100
+        }
+    }
+}
+

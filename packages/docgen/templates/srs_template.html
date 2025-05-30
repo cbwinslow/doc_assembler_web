@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Software Requirements Specification - {{ metadata.project_name }}</title>
+    <link rel="stylesheet" href="srs_template.css">
+</head>
+<body>
+    <div class="srs-document">
+        <header class="document-header">
+            <div class="document-title">
+                <h1>Software Requirements Specification</h1>
+                <h2>{{ metadata.project_name }}</h2>
+            </div>
+
+            <table class="document-control">
+                <tr>
+                    <th>Document ID:</th>
+                    <td>{{ metadata.document_id }}</td>
+                    <th>Version:</th>
+                    <td>{{ metadata.version }}</td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td>{{ metadata.status }}</td>
+                    <th>Issue Date:</th>
+                    <td>{{ metadata.issue_date }}</td>
+                </tr>
+                <tr>
+                    <th>Prepared By:</th>
+                    <td>{{ metadata.prepared_by }}</td>
+                    <th>Reviewed By:</th>
+                    <td>{{ metadata.reviewed_by }}</td>
+                </tr>
+                <tr>
+                    <th>Approved By:</th>
+                    <td>{{ metadata.approved_by }}</td>
+                    <th>Classification:</th>
+                    <td>{{ metadata.classification }}</td>
+                </tr>
+            </table>
+
+            <div class="revision-history">
+                <h3>Revision History</h3>
+                <table class="requirements-table">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Author</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for revision in metadata.revision_history %}
+                        <tr>
+                            <td>{{ revision.version }}</td>
+                            <td>{{ revision.date }}</td>
+                            <td>{{ revision.description }}</td>
+                            <td>{{ revision.author }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </header>
+
+        <nav class="table-of-contents">
+            <h2>Table of Contents</h2>
+            <ol>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#overall-description">Overall Description</a></li>
+                <li><a href="#specific-requirements">Specific Requirements</a></li>
+                <li><a href="#supporting-information">Supporting Information</a></li>
+            </ol>
+        </nav>
+
+        <main>
+            <section id="introduction">
+                <h2>1. Introduction</h2>
+                
+                <div class="subsection">
+                    <h3>1.1 Purpose</h3>
+                    {{ introduction.purpose }}
+                </div>
+
+                <div class="subsection">
+                    <h3>1.2 Scope</h3>
+                    {{ introduction.scope }}
+                </div>
+
+                <div class="subsection">
+                    <h3>1.3 Definitions, Acronyms, and Abbreviations</h3>
+                    <table class="requirements-table">
+                        {{ introduction.definitions }}
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h3>1.4 References</h3>
+                    <table class="requirements-table">
+                        {{ introduction.references }}
+                    </table>
+                </div>
+
+                <div class="subsection">
+                    <h3>1.5 Overview</h3>
+                    {{ introduction.overview }}
+                </div>
+            </section>
+
+            <section id="overall-description">
+                <h2>2. Overall Description</h2>
+
+                <div class="subsection">
+                    <h3>2.1 Product Perspective</h3>
+                    <div class="product-perspective">
+                        {{ overall_description.product_perspective.description }}
+                        
+                        <h4>System Interfaces</h4>
+                        <div class="interface-diagram">
+                            {{ overall_description.product_perspective.system_interfaces }}
+                        </div>
+
+                        <h4>User Interfaces</h4>
+                        {{ overall_description.product_perspective.user_interfaces }}
+
+                        <h4>Hardware Interfaces</h4>
+                        {{ overall_description.product_perspective.hardware_interfaces }}
+
+                        <h4>Software Interfaces</h4>
+                        {{ overall_description.product_perspective.software_interfaces }}
+
+                        <h4>Communications Interfaces</h4>
+                        {{ overall_description.product_perspective.communications_interfaces }}
+
+                        <h4>Memory Constraints</h4>
+                        {{ overall_description.product_perspective.memory_constraints }}
+
+                        <h4>Operations</h4>
+                        {{ overall_description.product_perspective.operations }}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>2.2 Product Functions</h3>
+                    {{ overall_description.product_functions }}
+                </div>
+
+                <div class="subsection">
+                    <h3>2.3 User Characteristics</h3>
+                    {{ overall_description.user_characteristics }}
+                </div>
+
+                <div class="subsection">
+                    <h3>2.4 Constraints</h3>
+                    <div class="constraints">
+                        <h4>Regulatory Requirements</h4>
+                        {{ overall_description.constraints.regulatory }}
+
+                        <h4>Hardware Limitations</h4>
+                        {{ overall_description.constraints.hardware }}
+
+                        <h4>Interface Requirements</h4>
+                        {{ overall_description.constraints.interfaces }}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>2.5 Assumptions and Dependencies</h3>
+                    {{ overall_description.assumptions_dependencies }}
+                </div>
+            </section>
+
+            <section id="specific-requirements">
+                <h2>3. Specific Requirements</h2>
+
+                <div class="subsection">
+                    <h3>3.1 External Interfaces</h3>
+                    <div class="interfaces">
+                        <h4>User Interfaces</h4>
+                        {{ specific_requirements.external_interfaces.user_interfaces }}
+
+                        <h4>Hardware Interfaces</h4>
+                        {{ specific_requirements.external_interfaces.hardware_interfaces }}
+
+                        <h4>Software Interfaces</h4>
+                        {{ specific_requirements.external_interfaces.software_interfaces }}
+
+                        <h4>Communications Interfaces</h4>
+                        {{ specific_requirements.external_interfaces.communications_interfaces }}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>3.2 Functional Requirements</h3>
+                    <div class="requirements-list">
+                        {% for requirement in specific_requirements.functional_requirements %}
+                        <div class="requirement-card">
+                            <div class="requirement-header">
+                                <span class="requirement-id">REQ-{{ requirement.id }}</span>
+                                <span class="priority priority-{{ requirement.priority.lower() }}">
+                                    {{ requirement.priority }}
+                                </span>
+                                <span class="status status-{{ requirement.status.lower() }}">
+                                    {{ requirement.status }}
+                                </span>
+                            </div>
+                            <div class="requirement-content">
+                                <p>{{ requirement.description }}</p>
+                                <div class="requirement-details">
+                                    <p><strong>Rationale:</strong> {{ requirement.rationale }}</p>
+                                    <p><strong>Verification:</strong>
+                                        <span class="verification-method">{{ requirement.verification }}</span>
+                                    </p>
+                                    {% if requirement.dependencies %}
+                                    <p><strong>Dependencies:</strong>
+                                        {% for dep in requirement.dependencies %}
+                                        <span class="requirement-dependency">REQ-{{ dep }}</span>
+                                        {% endfor %}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>3.3 Performance Requirements</h3>
+                    {{ specific_requirements.performance_requirements }}
+                </div>
+
+                <div class="subsection">
+                    <h3>3.4 Design Constraints</h3>
+                    <div class="constraints">
+                        <h4>Standards Compliance</h4>
+                        {{ specific_requirements.design_constraints.standards }}
+
+                        <h4>Hardware Limitations</h4>
+                        {{ specific_requirements.design_constraints.hardware }}
+
+                        <h4>Software Limitations</h4>
+                        {{ specific_requirements.design_constraints.software }}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>3.5 Software Quality Attributes</h3>
+                    <div class="quality-attributes">
+                        <div class="attribute">
+                            <h4>Reliability</h4>
+                            {{ specific_requirements.software_attributes.reliability }}
+                        </div>
+                        <div class="attribute">
+                            <h4>Availability</h4>
+                            {{ specific_requirements.software_attributes.availability }}
+                        </div>
+                        <div class="attribute">
+                            <h4>Security</h4>
+                            {{ specific_requirements.software_attributes.security }}
+                        </div>
+                        <div class="attribute">
+                            <h4>Maintainability</h4>
+                            {{ specific_requirements.software_attributes.maintainability }}
+                        </div>
+                        <div class="attribute">
+                            <h4>Portability</h4>
+                            {{ specific_requirements.software_attributes.portability }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="supporting-information">
+                <h2>4. Supporting Information</h2>
+
+                <div class="subsection">
+                    <h3>4.1 Assumptions</h3>
+                    {{ supporting_information.assumptions }}
+                </div>
+
+                <div class="subsection">
+                    <h3>4.2 Dependencies</h3>
+                    {{ supporting_information.dependencies }}
+                </div>
+
+                <div class="subsection">
+                    <h3>4.3 Impact Analysis</h3>
+                    <div class="impact-analysis">
+                        <h4>Business Impact</h4>
+                        {{ supporting_information.impact.business }}
+
+                        <h4>Technical Impact</h4>
+                        {{ supporting_information.impact.technical }}
+
+                        <h4>User Impact</h4>
+                        {{ supporting_information.impact.user }}
+                    </div>
+                </div>
+
+                <div class="subsection">
+                    <h3>4.4 Requirements Traceability Matrix</h3>
+                    <table class="traceability-matrix">
+                        <thead>
+                            <tr>
+                                <th>Requirement ID</th>
+                                <th>Description</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Dependencies</th>
+                                <th>Verification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in supporting_information.traceability_matrix %}
+                            <tr>
+                                <td>REQ-{{ req.id }}</td>
+                                <td>{{ req.description }}</td>
+                                <td>
+                                    <span class="priority priority-{{ req.priority.lower() }}">
+                                        {{ req.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status status-{{ req.status.lower() }}">
+                                        {{ req.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% for dep in req.dependencies %}
+                                    <span class="requirement-dependency">REQ-{{ dep }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <span class="verification-method">{{ req.verification }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p class="classification">{{ metadata.classification }}</p>
+                <p class="document-id">Document ID: {{ metadata.document_id }}</p>
+                <p class="page-number">Page <span class="current-page"></span></p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
+

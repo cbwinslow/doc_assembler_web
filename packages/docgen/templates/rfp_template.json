@@ -1,0 +1,119 @@
+{
+    "name": "request_for_proposal",
+    "description": "Request for Proposal (RFP) template following industry standards",
+    "template_type": "html",
+    "required_fields": [
+        "executive_summary",
+        "company_information",
+        "project_overview",
+        "scope_of_work",
+        "requirements",
+        "timeline",
+        "proposal_guidelines",
+        "evaluation_criteria",
+        "terms_conditions",
+        "submission_instructions"
+    ],
+    "metadata_template": {
+        "document_type": "Request for Proposal",
+        "rfp_number": "",
+        "issue_date": "",
+        "submission_deadline": "",
+        "contracting_authority": "",
+        "contact_person": "",
+        "contact_email": "",
+        "contact_phone": "",
+        "project_title": "",
+        "classification": "Business Confidential"
+    },
+    "section_descriptions": {
+        "executive_summary": {
+            "project_overview": "Brief project description",
+            "objectives": "Key project objectives",
+            "expectations": "Expected outcomes",
+            "timeline_summary": "Key dates and deadlines"
+        },
+        "company_information": {
+            "background": "Company background",
+            "mission": "Company mission and values",
+            "current_state": "Current situation",
+            "project_context": "Context for this project"
+        },
+        "project_overview": {
+            "background": "Project background",
+            "objectives": "Detailed objectives",
+            "scope": "Project scope",
+            "constraints": "Known constraints",
+            "assumptions": "Key assumptions"
+        },
+        "scope_of_work": {
+            "deliverables": "Required deliverables",
+            "specifications": "Technical specifications",
+            "requirements": "Functional requirements",
+            "exclusions": "Items not in scope"
+        },
+        "requirements": {
+            "technical": "Technical requirements",
+            "functional": "Functional requirements",
+            "operational": "Operational requirements",
+            "compliance": "Compliance requirements",
+            "security": "Security requirements"
+        },
+        "timeline": {
+            "schedule": "Project schedule",
+            "milestones": "Key milestones",
+            "deliverable_dates": "Deliverable due dates",
+            "review_periods": "Review periods"
+        },
+        "proposal_guidelines": {
+            "format": "Proposal format requirements",
+            "sections": "Required proposal sections",
+            "page_limits": "Section page limits",
+            "submission_format": "Submission format requirements"
+        },
+        "evaluation_criteria": {
+            "technical_criteria": "Technical evaluation criteria",
+            "management_criteria": "Management evaluation criteria",
+            "cost_criteria": "Cost evaluation criteria",
+            "scoring_system": "Scoring methodology",
+            "weights": "Criteria weights"
+        },
+        "terms_conditions": {
+            "legal_terms": "Legal requirements",
+            "contractual_terms": "Contract terms",
+            "intellectual_property": "IP rights",
+            "confidentiality": "Confidentiality requirements",
+            "payment_terms": "Payment terms"
+        },
+        "submission_instructions": {
+            "deadline": "Submission deadline",
+            "method": "Submission method",
+            "format": "Required formats",
+            "contact": "Submission contact",
+            "confirmation": "Submission confirmation process"
+        }
+    },
+    "validation_rules": {
+        "executive_summary": {
+            "required": true,
+            "max_length": 1000
+        },
+        "scope_of_work": {
+            "required": true,
+            "min_sections": 4
+        },
+        "requirements": {
+            "required": true,
+            "min_sections": 3
+        },
+        "timeline": {
+            "required": true,
+            "min_items": 5
+        },
+        "evaluation_criteria": {
+            "required": true,
+            "min_sections": 3
+        }
+    }
+}
+

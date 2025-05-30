@@ -1,0 +1,264 @@
+/* RFP Document Styles */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #3498db;
+    --highlight-color: #e74c3c;
+    --success-color: #2ecc71;
+    --warning-color: #f1c40f;
+    --text-color: #333;
+    --light-bg: #f8f9fa;
+    --border-color: #dee2e6;
+    --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    background-color: white;
+}
+
+.rfp-document {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2em;
+}
+
+/* Header Styles */
+.document-header {
+    background-color: var(--light-bg);
+    padding: 2em;
+    margin-bottom: 2em;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.rfp-info h1 {
+    color: var(--primary-color);
+    font-size: 2.5em;
+    margin: 0;
+}
+
+.rfp-info h2 {
+    color: var(--secondary-color);
+    font-size: 1.8em;
+    margin: 1em 0;
+}
+
+/* Metadata Tables */
+.metadata-table,
+.contact-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.metadata-table th,
+.contact-table th {
+    width: 30%;
+    text-align: left;
+    padding: 0.5em;
+    background-color: var(--light-bg);
+}
+
+.metadata-table td,
+.contact-table td {
+    padding: 0.5em;
+}
+
+/* Table of Contents */
+.table-of-contents {
+    background-color: var(--light-bg);
+    padding: 1.5em;
+    margin: 2em 0;
+    border-radius: 8px;
+}
+
+.table-of-contents ol {
+    list-style-type: decimal;
+    margin: 0;
+    padding-left: 1.5em;
+}
+
+.table-of-contents a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Sections */
+.section {
+    margin: 2em 0;
+    padding: 2em;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.section h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5em;
+    margin-bottom: 1em;
+}
+
+.section h3 {
+    color: var(--secondary-color);
+    margin: 1.5em 0 1em;
+}
+
+/* Grids */
+.requirements-grid,
+.criteria-grid,
+.terms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5em;
+    margin: 1.5em 0;
+}
+
+/* Cards */
+.requirement-card,
+.criteria-card,
+.terms-card {
+    padding: 1.5em;
+    background: var(--light-bg);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+/* Timeline */
+.timeline-container {
+    margin: 2em 0;
+}
+
+.milestone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1em;
+    margin: 1em 0;
+}
+
+/* Tables */
+.dates-table,
+.specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.dates-table th,
+.specs-table th {
+    background-color: var(--light-bg);
+    padding: 0.8em;
+    text-align: left;
+}
+
+.dates-table td,
+.specs-table td {
+    padding: 0.8em;
+    border: 1px solid var(--border-color);
+}
+
+/* Important Sections */
+.important {
+    border-left: 4px solid var(--highlight-color);
+}
+
+.alert-box {
+    background-color: #fff3cd;
+    border-left: 4px solid var(--warning-color);
+    padding: 1em;
+    margin: 1em 0;
+}
+
+.deadline {
+    color: var(--highlight-color);
+    font-weight: bold;
+}
+
+/* Submission Instructions */
+.submission-box {
+    background-color: var(--light-bg);
+    padding: 1.5em;
+    border-radius: 6px;
+    margin: 1em 0;
+}
+
+.deadline-info {
+    background-color: #f8d7da;
+    border-left: 4px solid var(--highlight-color);
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Footer */
+footer {
+    margin-top: 3em;
+    padding-top: 1em;
+    border-top: 2px solid var(--border-color);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+/* Print Styles */
+@media print {
+    body {
+        font-size: 12pt;
+    }
+
+    .rfp-document {
+        max-width: none;
+        padding: 0;
+    }
+
+    .section {
+        page-break-inside: avoid;
+        box-shadow: none;
+    }
+
+    .document-header {
+        box-shadow: none;
+    }
+
+    .table-of-contents {
+        page-break-after: always;
+    }
+
+    .footer-content {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+    }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .rfp-document {
+        padding: 1em;
+    }
+
+    .section {
+        padding: 1em;
+    }
+
+    .requirements-grid,
+    .criteria-grid,
+    .terms-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .document-header {
+        padding: 1em;
+    }
+}
+

@@ -1,0 +1,98 @@
+{
+    "name": "scientific_paper",
+    "description": "Scientific Research Paper template following academic standards",
+    "template_type": "html",
+    "required_fields": [
+        "title",
+        "abstract",
+        "introduction",
+        "methods",
+        "results",
+        "discussion",
+        "conclusion",
+        "references"
+    ],
+    "metadata_template": {
+        "document_type": "Scientific Paper",
+        "authors": [],
+        "institution": "",
+        "corresponding_author": "",
+        "keywords": [],
+        "journal_name": "",
+        "submission_date": "",
+        "manuscript_id": "",
+        "classification": "Academic"
+    },
+    "section_descriptions": {
+        "title": {
+            "main_title": "Primary title of the paper",
+            "subtitle": "Optional subtitle",
+            "running_title": "Shortened version for headers"
+        },
+        "abstract": {
+            "summary": "Brief overview of the paper",
+            "objectives": "Research objectives",
+            "methodology": "Brief methods description",
+            "results": "Key findings",
+            "conclusions": "Main conclusions",
+            "keywords": "Research keywords"
+        },
+        "introduction": {
+            "background": "Research background",
+            "literature_review": "Current state of research",
+            "research_gap": "Gap in current knowledge",
+            "objectives": "Research objectives",
+            "hypotheses": "Research hypotheses"
+        },
+        "methods": {
+            "study_design": "Research design",
+            "participants": "Study participants/materials",
+            "procedures": "Research procedures",
+            "measurements": "Measurements and variables",
+            "analysis": "Data analysis methods"
+        },
+        "results": {
+            "main_findings": "Primary results",
+            "statistical_analysis": "Statistical results",
+            "tables": "Data tables",
+            "figures": "Figures and graphs",
+            "additional_findings": "Secondary results"
+        },
+        "discussion": {
+            "interpretation": "Results interpretation",
+            "context": "Findings in context",
+            "implications": "Research implications",
+            "limitations": "Study limitations",
+            "future_research": "Future research directions"
+        },
+        "conclusion": {
+            "summary": "Research summary",
+            "significance": "Research significance",
+            "recommendations": "Recommendations"
+        },
+        "references": {
+            "citations": "Literature citations",
+            "bibliography": "Reference list"
+        }
+    },
+    "validation_rules": {
+        "abstract": {
+            "required": true,
+            "max_length": 300,
+            "min_length": 150
+        },
+        "methods": {
+            "required": true,
+            "min_sections": 3
+        },
+        "results": {
+            "required": true,
+            "min_sections": 2
+        },
+        "references": {
+            "required": true,
+            "min_items": 10
+        }
+    }
+}
+
