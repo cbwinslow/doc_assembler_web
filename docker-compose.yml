@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  mcp_server:
+    build:
+      context: ./packages/mcp_server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - MCP_API_KEY=${MCP_API_KEY}
+      - POSTGRES_DSN=${POSTGRES_DSN}
+      - REDIS_URL=${REDIS_URL}
+      - PLAYWRIGHT_BROWSERS_PATH=/app/data/playwright
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+      - playwright_data:/app/data/playwright
+    restart: unless-stopped
+    networks:
+      - mcp_network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-mcp}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mcppassword}
+      - POSTGRES_DB=${POSTGRES_DB:-mcpdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - mcp_network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - mcp_network
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 512M
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@cloudcurio.cc}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - mcp_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  playwright_data:
+    driver: local
+
+networks:
+  mcp_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+

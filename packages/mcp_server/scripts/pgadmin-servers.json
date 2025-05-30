@@ -1,0 +1,15 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "MCP Development DB",
+            "Group": "Development",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "mcp_dev",
+            "Username": "mcp",
+            "SSLMode": "prefer",
+            "Comment": "Development database for MCP Server"
+        }
+    }
+}
+

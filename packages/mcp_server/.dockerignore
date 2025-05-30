@@ -1,0 +1,227 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.mypy_cache/
+
+# Project specific
+data/
+logs/
+*.log
+*.db
+*.sqlite3
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+.docker/
+docker-compose*.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Playwright
+node_modules/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Large binary files
+*.pdf
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.mypy_cache/
+
+# Project specific
+data/
+logs/
+*.log
+*.db
+*.sqlite3
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.docker/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Playwright
+node_modules/
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.mypy_cache/
+
+# Project specific
+data/
+logs/
+*.log
+*.db
+*.sqlite3
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+

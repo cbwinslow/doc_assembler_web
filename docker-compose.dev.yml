@@ -1,0 +1,186 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  mcp_server:
+    build:
+      context: ./packages/mcp_server
+      dockerfile: Dockerfile
+      target: builder  # Use the builder stage for development
+    image: mcp_server:dev
+    container_name: mcp_server_dev
+    command: >
+      poetry run uvicorn mcp_server.api.main:app 
+      --host 0.0.0.0 
+      --port 8000 
+      --reload 
+      --reload-dir /app/mcp_server
+    volumes:
+      - ./packages/mcp_server:/app:cached  # Mount source code for hot reload
+      - mcp_data:/app/data
+      - mcp_logs:/app/logs
+    environment:
+      # Development settings
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      # Server settings
+      - PORT=8000
+      - WORKERS=1
+      - LOG_LEVEL=DEBUG
+      # Database settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=mcp_dev
+      - POSTGRES_USER=mcp
+      - POSTGRES_PASSWORD=mcp_password
+      - DATABASE_URL=postgresql://mcp:mcp_password@postgres:5432/mcp_dev
+      # Redis settings
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+      # Playwright settings
+      - PLAYWRIGHT_BROWSERS_PATH=/app/data/playwright
+    ports:
+      - "8000:8000"  # API
+      - "5678:5678"  # Remote debugger
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    security_opt:
+      - seccomp=unconfined  # Required for debugging
+    cap_add:
+      - SYS_PTRACE  # Required for debugging
+    networks:
+      - mcp_network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: mcp_postgres_dev
+    environment:
+      - POSTGRES_USER=mcp
+      - POSTGRES_PASSWORD=mcp_password
+      - POSTGRES_DB=mcp_dev
+      # Optimization for development
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/mcp_server/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - mcp_network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mcp -d mcp_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c max_connections=100
+      -c effective_cache_size=512MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c jit=off
+
+  redis:
+    image: redis:7-alpine
+    container_name: mcp_redis_dev
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - mcp_network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mcp_pgadmin_dev
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mcp.local
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_CONFIG_UPGRADE_CHECK_ENABLED=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./packages/mcp_server/scripts/pgadmin-servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mcp_network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "http://localhost/misc/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Development-only services
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mcp_mailhog_dev
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - mcp_network
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+    name: mcp_postgres_dev_data
+  redis_data:
+    name: mcp_redis_dev_data
+  pgadmin_data:
+    name: mcp_pgadmin_dev_data
+  mcp_data:
+    name: mcp_app_dev_data
+  mcp_logs:
+    name: mcp_app_dev_logs
+
+networks:
+  mcp_network:
+    name: mcp_dev_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+

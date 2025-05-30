@@ -1,10 +1,42 @@
-# Documentation Assembly System
+# DocAssembler: AI-Powered Document Research & Assembly System
 
-A comprehensive system for crawling web content and generating structured documentation with AI capabilities.
+An intelligent document assembly system that combines targeted web crawling, AI-driven research compilation, and smart template-based document generation. DocAssembler helps users create comprehensive documents by automatically gathering, analyzing, and synthesizing information from various web sources.
 
-## Project Overview
+## 🎯 Core Features
 
-This project consists of three main components:
+### 1. Intelligent Web Documentation Crawler
+- Crawls entire website directories to gather documentation
+- Focuses on process documentation, API specs, software instructions
+- Supports various documentation types:
+  - Technical documentation
+  - API documentation
+  - Process instructions
+  - Wiki pages
+  - Social media profiles
+  - Knowledge bases
+
+### 2. AI Research Compilation
+- Tag-based research gathering
+- Accepts user summaries and topic keywords
+- Performs deep web searches on individual tags
+- Analyzes tag relationships and domain contexts
+- Generates comprehensive research reports in PDF/Markdown
+- Similar to OpenAI's DeepResearch functionality
+
+### 3. Smart Template-Based Document Assembly
+- Semi-automated document completion
+- User provides partial information
+- AI completes missing sections
+- Supported templates include:
+  - Software Requirements Specification (SRS)
+  - Executive Summaries
+  - CREST Data Problem Reports
+  - RFP Proposals
+  - Report Abstracts
+  - Plot Summaries
+  - Research Synopses
+
+## Project Components
 
 1. **Web Crawler** (`packages/webcrawler`):
    - Intelligent web crawling with domain/subdomain support
@@ -91,35 +123,60 @@ cd ../../services/web
 npm test
 ```
 
-## Usage
+## Usage Examples
 
-### Web Crawler
-
+### 1. Documentation Crawling
 ```python
 from webcrawler.core.config import CrawlerConfig
 from webcrawler.core.crawler import Crawler
 
+# Configure and run documentation crawler
 config = CrawlerConfig(
-    start_url="https://example.com",
-    max_depth=3,
-    max_pages=100
+    start_url="https://docs.example.com",
+    doc_types=["api", "wiki", "technical"],
+    content_filters=["documentation", "guide", "manual"]
 )
 
 async with Crawler(config) as crawler:
-    async for url, content, links in crawler.crawl():
-        print(f"Crawled: {url}")
+    docs = await crawler.gather_documentation()
+    print(f"Found {len(docs)} documentation pages")
 ```
 
-### Document Generator
-
+### 2. Research Compilation
 ```python
-from docgen.core.processor import DocumentProcessor
-from docgen.models.document import DocumentType
+from airesearch.core.researcher import Researcher
+from airesearch.models.topic import ResearchTopic
 
-processor = DocumentProcessor()
-document = processor.process_document(
-    content="# My Document\n\nContent here...",
-    doc_type=DocumentType.MARKDOWN
+# Configure research parameters
+topic = ResearchTopic(
+    tags=["kubernetes", "service mesh", "istio"],
+    context="cloud native architecture",
+    depth="technical"
+)
+
+# Generate research report
+researcher = Researcher()
+report = await researcher.compile_research(
+    topic=topic,
+    output_format="pdf",
+    include_citations=True
+)
+```
+
+### 3. Template-Based Document
+```python
+from docgen.core.assembler import DocumentAssembler
+from docgen.models.template import Template
+
+# Create SRS document from template
+assembler = DocumentAssembler()
+srs_doc = await assembler.create_document(
+    template=Template.SRS,
+    initial_content={
+        "project_name": "MyProject",
+        "project_scope": "Cloud-based service...",
+    },
+    auto_complete=True
 )
 ```
 
@@ -135,20 +192,31 @@ docker compose build
 docker compose up -d
 ```
 
-## Configuration
+## Configuration Options
 
-### Web Crawler
+### Documentation Crawler
+- `doc_types`: Types of documentation to gather
+  - api, wiki, technical, process, social
+- `content_filters`: Content type filters
+- `depth`: Crawling depth configuration
+- `extract_assets`: Include images and diagrams
+- `rate_limits`: Domain-specific rate limiting
 
-- `max_depth`: Maximum crawl depth (default: 3)
-- `max_pages`: Maximum pages to crawl (default: 1000)
-- `requests_per_second`: Rate limit (default: 2.0)
-- `respect_robots_txt`: Follow robots.txt rules (default: True)
+### AI Research
+- `search_depth`: Research depth level
+- `tag_relationships`: Tag correlation settings
+- `source_quality`: Source validation rules
+- `citation_style`: Citation format
+- `analysis_level`: Research analysis depth
 
-### Document Generator
-
-- Template customization in `templates/`
-- Output format configuration
-- Metadata schema definitions
+### Document Templates
+- `templates/`: Customizable document templates
+  - SRS Template
+  - Executive Summary Template
+  - RFP Template
+  - Research Report Template
+- `completion_rules/`: AI completion guidelines
+- `style_guides/`: Document styling rules
 
 ## Contributing
 
