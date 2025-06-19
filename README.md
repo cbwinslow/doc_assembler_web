@@ -57,6 +57,10 @@ An intelligent document assembly system that combines targeted web crawling, AI-
    - Document preview and editing
    - Configuration management
 
+## Database Recommendation
+
+DocAssembler stores raw text in a traditional relational database and vectors in a vector database. By default we recommend **MySQL** for document metadata and **ChromaDB** for vector search. Example setup scripts are located in `scripts/databases/`.
+
 ## Getting Started
 
 ### Prerequisites
