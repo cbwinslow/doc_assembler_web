@@ -7,7 +7,7 @@ data "cloudflare_zone" "main" {
 resource "cloudflare_record" "app" {
   zone_id = var.cloudflare_zone_id
   name    = var.subdomain
-  value   = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
+  value   = oci_core_instance.docassembler_app_server[0].public_ip
   type    = "A"
   ttl     = 300
   proxied = true
@@ -18,7 +18,7 @@ resource "cloudflare_record" "app" {
 resource "cloudflare_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = "api"
-  value   = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
+  value   = oci_core_instance.docassembler_app_server[0].public_ip
   type    = "A"
   ttl     = 300
   proxied = true
@@ -41,7 +41,7 @@ resource "cloudflare_record" "www" {
 resource "cloudflare_record" "monitoring" {
   zone_id = var.cloudflare_zone_id
   name    = "monitoring"
-  value   = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
+  value   = oci_core_instance.docassembler_app_server[0].public_ip
   type    = "A"
   ttl     = 300
   proxied = true
@@ -52,7 +52,7 @@ resource "cloudflare_record" "monitoring" {
 resource "cloudflare_record" "grafana" {
   zone_id = var.cloudflare_zone_id
   name    = "grafana"
-  value   = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
+  value   = oci_core_instance.docassembler_app_server[0].public_ip
   type    = "A"
   ttl     = 300
   proxied = true
@@ -63,7 +63,7 @@ resource "cloudflare_record" "grafana" {
 resource "cloudflare_record" "prometheus" {
   zone_id = var.cloudflare_zone_id
   name    = "prometheus"
-  value   = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
+  value   = oci_core_instance.docassembler_app_server[0].public_ip
   type    = "A"
   ttl     = 300
   proxied = true
@@ -201,31 +201,34 @@ resource "cloudflare_access_policy" "admin_panel_policy" {
   }
 }
 
-# Workers for Edge Computing
-resource "cloudflare_worker_script" "api_proxy" {
-  name    = "docassembler-api-proxy"
-  content = file("${path.module}/../cloudflare/workers/api-proxy.js")
+# Workers for Edge Computing - temporarily commented out
+# Requires KV namespace which needs account_id
+# resource "cloudflare_worker_script" "api_proxy" {
+#   name    = "docassembler-api-proxy"
+#   content = file("${path.module}/../cloudflare/workers/api-proxy.js")
+#
+#   kv_namespace_binding {
+#     name         = "API_CACHE"
+#     namespace_id = cloudflare_workers_kv_namespace.api_cache.id
+#   }
+#
+#   secret_text_binding {
+#     name = "API_KEY"
+#     text = var.jwt_secret
+#   }
+# }
 
-  kv_namespace_binding {
-    name         = "API_CACHE"
-    namespace_id = cloudflare_workers_kv_namespace.api_cache.id
-  }
+# Temporarily commented out - requires account_id
+# resource "cloudflare_workers_kv_namespace" "api_cache" {
+#   title = "docassembler-api-cache-${var.environment}"
+#   account_id = var.cloudflare_account_id
+# }
 
-  secret_text_binding {
-    name = "API_KEY"
-    text = var.jwt_secret
-  }
-}
-
-resource "cloudflare_workers_kv_namespace" "api_cache" {
-  title = "DocAssembler API Cache"
-}
-
-resource "cloudflare_worker_route" "api_proxy" {
-  zone_id     = var.cloudflare_zone_id
-  pattern     = "api.${var.domain_name}/api/*"
-  script_name = cloudflare_worker_script.api_proxy.name
-}
+# resource "cloudflare_worker_route" "api_proxy" {
+#   zone_id     = var.cloudflare_zone_id
+#   pattern     = "api.${var.domain_name}/api/*"
+#   script_name = cloudflare_worker_script.api_proxy.name
+# }
 
 # Analytics and Performance
 resource "cloudflare_logpull_retention" "analytics" {
@@ -263,22 +266,18 @@ resource "tls_cert_request" "origin" {
   ]
 }
 
-# R2 Object Storage Integration
-resource "cloudflare_r2_bucket" "documents" {
-  account_id = var.cloudflare_account_id
-  name       = "docassembler-${var.environment}-documents"
-  location   = "auto"
-}
+# R2 Object Storage Integration - temporarily commented out
+# Requires account_id and valid location
+# resource "cloudflare_r2_bucket" "documents" {
+#   account_id = var.cloudflare_account_id
+#   name       = "docassembler-${var.environment}-documents"
+#   location   = "WNAM"  # Valid location
+# }
 
-resource "cloudflare_r2_bucket" "backups" {
-  account_id = var.cloudflare_account_id
-  name       = "docassembler-${var.environment}-backups"
-  location   = "auto"
-}
+# resource "cloudflare_r2_bucket" "backups" {
+#   account_id = var.cloudflare_account_id
+#   name       = "docassembler-${var.environment}-backups"
+#   location   = "WNAM"  # Valid location
+# }
 
-# Additional Cloudflare Variables
-variable "cloudflare_account_id" {
-  description = "Cloudflare Account ID"
-  type        = string
-}
 

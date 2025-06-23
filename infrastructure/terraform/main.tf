@@ -11,16 +11,18 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket                      = "docassembler-terraform-state"
-    key                         = "infrastructure/terraform.tfstate"
-    region                      = "us-ashburn-1"
-    endpoint                    = "https://objectstorage.us-ashburn-1.oraclecloud.com"
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-    force_path_style           = true
-  }
+  # Local backend for initial setup
+  # To use remote backend, configure after OCI credentials are set up
+  # backend "s3" {
+  #   bucket                      = "docassembler-terraform-state"
+  #   key                         = "infrastructure/terraform.tfstate"
+  #   region                      = "us-ashburn-1"
+  #   endpoint                    = "https://objectstorage.us-ashburn-1.oraclecloud.com"
+  #   skip_credentials_validation = true
+  #   skip_metadata_api_check     = true
+  #   skip_region_validation      = true
+  #   force_path_style           = true
+  # }
 }
 
 # Configure Oracle Cloud provider
@@ -46,7 +48,7 @@ data "oci_core_images" "oracle_linux" {
   compartment_id           = var.oci_compartment_id
   operating_system         = "Oracle Linux"
   operating_system_version = "8"
-  shape                   = "VM.Standard.E4.Flex"
+  shape                   = "VM.Standard.E2.1.Micro"  # Always Free Tier
   sort_by                 = "TIMECREATED"
   sort_order              = "DESC"
 }
@@ -213,53 +215,19 @@ resource "oci_core_subnet" "docassembler_private_subnet" {
   }
 }
 
-# Load Balancer
-resource "oci_load_balancer_load_balancer" "docassembler_lb" {
-  compartment_id = var.oci_compartment_id
-  display_name   = "docassembler-lb"
-  shape          = "flexible"
-  subnet_ids     = [oci_core_subnet.docassembler_public_subnet.id]
+# Load Balancer removed - not included in Always Free Tier
+# Using direct access to application server instead
+# For production, consider using a paid load balancer or implement software load balancing
 
-  shape_details {
-    minimum_bandwidth_in_mbps = 10
-    maximum_bandwidth_in_mbps = 100
-  }
-
-  freeform_tags = {
-    Environment = var.environment
-    Project     = "DocAssembler"
-  }
-}
-
-# Backend Set for Load Balancer
-resource "oci_load_balancer_backend_set" "docassembler_backend_set" {
-  load_balancer_id = oci_load_balancer_load_balancer.docassembler_lb.id
-  name             = "docassembler-backend-set"
-  policy           = "ROUND_ROBIN"
-
-  health_checker {
-    protocol          = "HTTP"
-    interval_ms       = 10000
-    port              = 5000
-    response_body_regex = ".*"
-    retries           = 3
-    timeout_in_millis = 3000
-    url_path          = "/api/health"
-  }
-}
-
-# Application Server Instances
+# Application Server Instances (Always Free Tier)
 resource "oci_core_instance" "docassembler_app_server" {
   count               = var.app_server_count
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.oci_compartment_id
   display_name        = "docassembler-app-${count.index + 1}"
-  shape               = "VM.Standard.E4.Flex"
+  shape               = "VM.Standard.E2.1.Micro"  # Always Free Tier
 
-  shape_config {
-    ocpus         = 2
-    memory_in_gbs = 8
-  }
+  # No shape_config needed for Always Free Tier - fixed 1 OCPU, 1GB RAM
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.docassembler_public_subnet.id
@@ -277,6 +245,7 @@ resource "oci_core_instance" "docassembler_app_server" {
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
       environment = var.environment
       domain_name = var.domain_name
+      ssh_public_key = file(var.ssh_public_key_path)
     }))
   }
 
@@ -287,17 +256,14 @@ resource "oci_core_instance" "docassembler_app_server" {
   }
 }
 
-# Database Server Instance
+# Database Server Instance (Always Free Tier)
 resource "oci_core_instance" "docassembler_db_server" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.oci_compartment_id
   display_name        = "docassembler-db"
-  shape               = "VM.Standard.E4.Flex"
+  shape               = "VM.Standard.E2.1.Micro"  # Always Free Tier
 
-  shape_config {
-    ocpus         = 2
-    memory_in_gbs = 16
-  }
+  # No shape_config needed for Always Free Tier - fixed 1 OCPU, 1GB RAM
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.docassembler_private_subnet.id
@@ -344,51 +310,6 @@ data "oci_objectstorage_namespace" "ns" {
   compartment_id = var.oci_compartment_id
 }
 
-# Load Balancer Listeners
-resource "oci_load_balancer_listener" "docassembler_http_listener" {
-  load_balancer_id         = oci_load_balancer_load_balancer.docassembler_lb.id
-  name                     = "http-listener"
-  default_backend_set_name = oci_load_balancer_backend_set.docassembler_backend_set.name
-  port                     = 80
-  protocol                 = "HTTP"
-}
-
-resource "oci_load_balancer_listener" "docassembler_https_listener" {
-  load_balancer_id         = oci_load_balancer_load_balancer.docassembler_lb.id
-  name                     = "https-listener"
-  default_backend_set_name = oci_load_balancer_backend_set.docassembler_backend_set.name
-  port                     = 443
-  protocol                 = "HTTP"
-
-  ssl_configuration {
-    certificate_name        = oci_load_balancer_certificate.docassembler_cert.certificate_name
-    verify_peer_certificate = false
-  }
-}
-
-# SSL Certificate (placeholder - will be replaced with Let's Encrypt)
-resource "oci_load_balancer_certificate" "docassembler_cert" {
-  load_balancer_id   = oci_load_balancer_load_balancer.docassembler_lb.id
-  ca_certificate     = file("${path.module}/ssl/ca-cert.pem")
-  certificate_name   = "docassembler-cert"
-  private_key        = file("${path.module}/ssl/private-key.pem")
-  public_certificate = file("${path.module}/ssl/public-cert.pem")
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Backend servers for Load Balancer
-resource "oci_load_balancer_backend" "docassembler_backends" {
-  count            = var.app_server_count
-  load_balancer_id = oci_load_balancer_load_balancer.docassembler_lb.id
-  backendset_name  = oci_load_balancer_backend_set.docassembler_backend_set.name
-  ip_address       = oci_core_instance.docassembler_app_server[count.index].private_ip
-  port             = 5000
-  backup           = false
-  drain            = false
-  offline          = false
-  weight           = 1
-}
+# Load balancer components removed for Always Free Tier
+# Direct access to application server will be used instead
 

@@ -42,6 +42,11 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
+variable "cloudflare_account_id" {
+  description = "Cloudflare Account ID"
+  type        = string
+}
+
 # General Variables
 variable "environment" {
   description = "Environment name (dev, staging, prod)"

@@ -1,13 +1,5 @@
-# Load Balancer Outputs
-output "load_balancer_ip" {
-  description = "Public IP address of the load balancer"
-  value       = oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address
-}
-
-output "load_balancer_id" {
-  description = "OCID of the load balancer"
-  value       = oci_load_balancer_load_balancer.docassembler_lb.id
-}
+# Load Balancer removed for Always Free Tier
+# Using direct access to application server
 
 # Application Server Outputs
 output "app_server_public_ips" {
@@ -114,7 +106,7 @@ output "deployment_commands" {
 output "health_check_urls" {
   description = "Health check URLs for monitoring"
   value = {
-    load_balancer = "http://${oci_load_balancer_load_balancer.docassembler_lb.ip_address_details[0].ip_address}/api/health"
+    app_server = "http://${oci_core_instance.docassembler_app_server[0].public_ip}/api/health"
     application = "https://${var.subdomain}.${var.domain_name}/api/health"
     api = "https://api.${var.domain_name}/health"
   }
