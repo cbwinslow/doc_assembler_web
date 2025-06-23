@@ -1,0 +1,375 @@
+name: Deploy DocAssembler
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Test and Build Phase
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: [frontend, backend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/${{ matrix.service }}/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd apps/${{ matrix.service }}
+          npm ci
+          
+      - name: Run linting
+        run: |
+          cd apps/${{ matrix.service }}
+          npm run lint
+          
+      - name: Run type checking
+        if: matrix.service == 'frontend'
+        run: |
+          cd apps/${{ matrix.service }}
+          npm run type-check
+          
+      - name: Run tests
+        run: |
+          cd apps/${{ matrix.service }}
+          npm run test
+          
+      - name: Build application
+        run: |
+          cd apps/${{ matrix.service }}
+          npm run build
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build
+          path: apps/${{ matrix.service }}/dist/
+          retention-days: 7
+
+  # Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: typescript, javascript
+
+  # Build Docker Images
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    strategy:
+      matrix:
+        service: [frontend, backend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build
+          path: apps/${{ matrix.service }}/dist/
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/${{ matrix.service }}
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # Infrastructure Deployment
+  infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: https://app.docassembler.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+          
+      - name: Configure Oracle Cloud CLI
+        uses: oracle-actions/configure-oci-cli@v1
+        with:
+          user: ${{ secrets.OCI_USER_OCID }}
+          fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+          tenancy: ${{ secrets.OCI_TENANCY_OCID }}
+          region: ${{ secrets.OCI_REGION }}
+          key_content: ${{ secrets.OCI_PRIVATE_KEY }}
+          
+      - name: Terraform Init
+        run: |
+          cd infrastructure/terraform
+          terraform init \
+            -backend-config="access_key=${{ secrets.OCI_ACCESS_KEY }}" \
+            -backend-config="secret_key=${{ secrets.OCI_SECRET_KEY }}"
+            
+      - name: Terraform Plan
+        run: |
+          cd infrastructure/terraform
+          terraform plan \
+            -var="oci_tenancy_ocid=${{ secrets.OCI_TENANCY_OCID }}" \
+            -var="oci_user_ocid=${{ secrets.OCI_USER_OCID }}" \
+            -var="oci_fingerprint=${{ secrets.OCI_FINGERPRINT }}" \
+            -var="oci_private_key_path=/tmp/oci_private_key.pem" \
+            -var="oci_compartment_id=${{ secrets.OCI_COMPARTMENT_ID }}" \
+            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
+            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
+            -var="environment=${{ github.event.inputs.environment || 'production' }}" \
+            -out=tfplan
+            
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          cd infrastructure/terraform
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_private_key.pem
+          chmod 600 /tmp/oci_private_key.pem
+          terraform apply -auto-approve tfplan
+          
+      - name: Save Terraform Outputs
+        id: terraform-outputs
+        run: |
+          cd infrastructure/terraform
+          echo "load_balancer_ip=$(terraform output -raw load_balancer_ip)" >> $GITHUB_OUTPUT
+          echo "app_servers=$(terraform output -json app_server_public_ips)" >> $GITHUB_OUTPUT
+
+  # Application Deployment
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    needs: infrastructure
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Ansible
+        run: |
+          pip install ansible ansible-core
+          ansible-galaxy install -r deployment/requirements.yml
+          
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ needs.infrastructure.outputs.load_balancer_ip }} >> ~/.ssh/known_hosts
+          
+      - name: Create Ansible Inventory
+        run: |
+          cd deployment
+          cat > inventory/production.yml << EOF
+          all:
+            children:
+              app_servers:
+                hosts:
+          $(echo '${{ needs.infrastructure.outputs.app_servers }}' | jq -r '.[] | "          " + . + ":"')
+                vars:
+                  ansible_user: opc
+                  ansible_ssh_private_key_file: ~/.ssh/id_rsa
+              load_balancer:
+                hosts:
+                  ${{ needs.infrastructure.outputs.load_balancer_ip }}:
+                vars:
+                  ansible_user: opc
+                  ansible_ssh_private_key_file: ~/.ssh/id_rsa
+          EOF
+          
+      - name: Deploy Backend
+        run: |
+          cd deployment
+          ansible-playbook -i inventory/production.yml playbooks/deploy-backend.yml \
+            --extra-vars "docker_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}" \
+            --extra-vars "environment=${{ github.event.inputs.environment || 'production' }}"
+            
+      - name: Deploy Frontend
+        run: |
+          cd deployment
+          ansible-playbook -i inventory/production.yml playbooks/deploy-frontend.yml \
+            --extra-vars "docker_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}" \
+            --extra-vars "environment=${{ github.event.inputs.environment || 'production' }}"
+            
+      - name: Setup SSL Certificates
+        run: |
+          cd deployment
+          ansible-playbook -i inventory/production.yml playbooks/setup-ssl.yml \
+            --extra-vars "domain_name=docassembler.com"
+
+  # Health Checks and Monitoring
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+        
+      - name: Check application health
+        run: |
+          max_attempts=10
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Health check attempt $attempt/$max_attempts"
+            
+            if curl -f -s https://app.docassembler.com/api/health; then
+              echo "✅ Application is healthy"
+              exit 0
+            fi
+            
+            echo "❌ Health check failed, retrying in 30 seconds..."
+            sleep 30
+            ((attempt++))
+          done
+          
+          echo "❌ Application failed health checks"
+          exit 1
+          
+      - name: Run smoke tests
+        run: |
+          curl -f -s https://app.docassembler.com/ | grep -q "DocAssembler"
+          curl -f -s https://api.docassembler.com/health | grep -q "healthy"
+          
+      - name: Notify deployment success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          message: |
+            🚀 DocAssembler deployed successfully!
+            Environment: ${{ github.event.inputs.environment || 'production' }}
+            Commit: ${{ github.sha }}
+            URL: https://app.docassembler.com
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Notify deployment failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          message: |
+            ❌ DocAssembler deployment failed!
+            Environment: ${{ github.event.inputs.environment || 'production' }}
+            Commit: ${{ github.sha }}
+            Please check the deployment logs.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Cleanup on failure
+  cleanup:
+    name: Cleanup on Failure
+    runs-on: ubuntu-latest
+    needs: [infrastructure, deploy, health-check]
+    if: failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+      - name: Rollback deployment
+        run: |
+          echo "Rolling back deployment..."
+          # Add rollback logic here if needed
+          
+      - name: Clean up resources
+        run: |
+          echo "Cleaning up failed deployment resources..."
+          # Add cleanup logic here if needed
+
