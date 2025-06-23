@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "ingestion"
+version = "0.1.0"
+description = "Utilities for text ingestion, chunking, and streaming"
+authors = ["CloudCurio <dev@cloudcurio.cc>"]
+packages = [{include = "ingestion", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiohttp = "^3.9"
+beautifulsoup4 = "^4.13.4"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+black = "^25.1.0"
+mypy = "^1.15.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.mypy]
+python_version = "3.12"
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
