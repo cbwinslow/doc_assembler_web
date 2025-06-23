@@ -1,0 +1,371 @@
+#cloud-config
+
+package_upgrade: true
+package_reboot_if_required: true
+
+packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - git
+  - curl
+  - wget
+  - htop
+  - vim
+  - unzip
+  - jq
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+  - fail2ban
+  - ufw
+  - nodejs
+  - npm
+
+groups:
+  - docker
+
+users:
+  - name: docassembler
+    groups: [docker, sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+write_files:
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        },
+        "storage-driver": "overlay2",
+        "storage-opts": [
+          "overlay2.override_kernel_check=true"
+        ]
+      }
+    permissions: '0644'
+
+  - path: /etc/nginx/sites-available/docassembler
+    content: |
+      server {
+          listen 80;
+          server_name ${domain_name} www.${domain_name};
+          
+          location /.well-known/acme-challenge/ {
+              root /var/www/html;
+          }
+          
+          location / {
+              return 301 https://$server_name$request_uri;
+          }
+      }
+      
+      upstream backend {
+          least_conn;
+          server 127.0.0.1:5000 max_fails=3 fail_timeout=30s;
+          keepalive 32;
+      }
+      
+      upstream frontend {
+          least_conn;
+          server 127.0.0.1:3000 max_fails=3 fail_timeout=30s;
+          keepalive 32;
+      }
+      
+      server {
+          listen 443 ssl http2;
+          server_name app.${domain_name};
+          
+          ssl_certificate /etc/letsencrypt/live/app.${domain_name}/fullchain.pem;
+          ssl_certificate_key /etc/letsencrypt/live/app.${domain_name}/privkey.pem;
+          
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+          ssl_prefer_server_ciphers off;
+          ssl_session_cache shared:SSL:10m;
+          ssl_session_timeout 10m;
+          
+          add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+          add_header X-Frame-Options DENY always;
+          add_header X-Content-Type-Options nosniff always;
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+          
+          client_max_body_size 50M;
+          
+          location / {
+              proxy_pass http://frontend;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_buffering off;
+              proxy_request_buffering off;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+          }
+      }
+      
+      server {
+          listen 443 ssl http2;
+          server_name api.${domain_name};
+          
+          ssl_certificate /etc/letsencrypt/live/api.${domain_name}/fullchain.pem;
+          ssl_certificate_key /etc/letsencrypt/live/api.${domain_name}/privkey.pem;
+          
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+          ssl_prefer_server_ciphers off;
+          ssl_session_cache shared:SSL:10m;
+          ssl_session_timeout 10m;
+          
+          add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+          add_header X-Frame-Options DENY always;
+          add_header X-Content-Type-Options nosniff always;
+          add_header X-XSS-Protection "1; mode=block" always;
+          add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+          
+          client_max_body_size 50M;
+          
+          location / {
+              proxy_pass http://backend;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_buffering off;
+              proxy_request_buffering off;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+          }
+      }
+    permissions: '0644'
+
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 1h
+      findtime = 10m
+      maxretry = 3
+      
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+      
+      [nginx-http-auth]
+      enabled = true
+      filter = nginx-http-auth
+      port = http,https
+      logpath = /var/log/nginx/error.log
+      maxretry = 5
+      
+      [nginx-limit-req]
+      enabled = true
+      filter = nginx-limit-req
+      port = http,https
+      logpath = /var/log/nginx/error.log
+      maxretry = 10
+    permissions: '0644'
+
+  - path: /opt/scripts/health-check.sh
+    content: |
+      #!/bin/bash
+      
+      # Health check script for DocAssembler
+      set -e
+      
+      # Check if services are running
+      check_service() {
+          local service=$1
+          if systemctl is-active --quiet $service; then
+              echo "✅ $service is running"
+              return 0
+          else
+              echo "❌ $service is not running"
+              return 1
+          fi
+      }
+      
+      # Check HTTP endpoints
+      check_endpoint() {
+          local url=$1
+          local expected=$2
+          
+          if curl -f -s "$url" | grep -q "$expected"; then
+              echo "✅ $url is healthy"
+              return 0
+          else
+              echo "❌ $url is not responding correctly"
+              return 1
+          fi
+      }
+      
+      echo "=== DocAssembler Health Check ==="
+      echo "Timestamp: $(date)"
+      
+      # System checks
+      check_service docker
+      check_service nginx
+      check_service fail2ban
+      
+      # Application checks
+      if docker ps | grep -q docassembler-backend; then
+          echo "✅ Backend container is running"
+      else
+          echo "❌ Backend container is not running"
+      fi
+      
+      if docker ps | grep -q docassembler-frontend; then
+          echo "✅ Frontend container is running"
+      else
+          echo "❌ Frontend container is not running"
+      fi
+      
+      # Endpoint checks
+      check_endpoint "http://localhost:5000/api/health" "healthy"
+      check_endpoint "http://localhost:3000" "DocAssembler"
+      
+      echo "=== Health Check Complete ==="
+    permissions: '0755'
+
+  - path: /opt/scripts/backup.sh
+    content: |
+      #!/bin/bash
+      
+      # Backup script for DocAssembler
+      set -e
+      
+      BACKUP_DIR="/opt/backups"
+      DATE=$(date +%Y%m%d_%H%M%S)
+      BACKUP_NAME="docassembler_backup_$DATE"
+      
+      mkdir -p "$BACKUP_DIR"
+      
+      echo "Starting backup: $BACKUP_NAME"
+      
+      # Create backup archive
+      tar -czf "$BACKUP_DIR/$BACKUP_NAME.tar.gz" \
+          --exclude='node_modules' \
+          --exclude='*.log' \
+          /opt/docassembler \
+          /etc/nginx/sites-available/docassembler \
+          /etc/letsencrypt
+      
+      # Upload to object storage (placeholder)
+      echo "Backup created: $BACKUP_DIR/$BACKUP_NAME.tar.gz"
+      
+      # Cleanup old backups (keep last 7 days)
+      find "$BACKUP_DIR" -name "docassembler_backup_*.tar.gz" -mtime +7 -delete
+      
+      echo "Backup completed successfully"
+    permissions: '0755'
+
+  - path: /opt/scripts/deploy.sh
+    content: |
+      #!/bin/bash
+      
+      # Deployment script for DocAssembler
+      set -e
+      
+      IMAGE_BACKEND=${1:-"ghcr.io/docassembler/backend:latest"}
+      IMAGE_FRONTEND=${2:-"ghcr.io/docassembler/frontend:latest"}
+      
+      echo "Deploying DocAssembler..."
+      echo "Backend image: $IMAGE_BACKEND"
+      echo "Frontend image: $IMAGE_FRONTEND"
+      
+      # Stop existing containers
+      docker stop docassembler-backend docassembler-frontend || true
+      docker rm docassembler-backend docassembler-frontend || true
+      
+      # Pull new images
+      docker pull "$IMAGE_BACKEND"
+      docker pull "$IMAGE_FRONTEND"
+      
+      # Start backend
+      docker run -d \
+          --name docassembler-backend \
+          --restart unless-stopped \
+          -p 5000:5000 \
+          -e NODE_ENV=${environment} \
+          -e DATABASE_URL="postgresql://user:pass@db:5432/docassembler" \
+          -e REDIS_URL="redis://redis:6379" \
+          -e JWT_SECRET="$JWT_SECRET" \
+          -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+          "$IMAGE_BACKEND"
+      
+      # Start frontend
+      docker run -d \
+          --name docassembler-frontend \
+          --restart unless-stopped \
+          -p 3000:3000 \
+          -e VITE_API_BASE_URL="https://api.${domain_name}" \
+          "$IMAGE_FRONTEND"
+      
+      # Wait for services to start
+      sleep 10
+      
+      # Health check
+      if /opt/scripts/health-check.sh; then
+          echo "✅ Deployment successful"
+      else
+          echo "❌ Deployment failed health check"
+          exit 1
+      fi
+    permissions: '0755'
+
+runcmd:
+  # Install Docker
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+  - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io
+
+  # Setup Docker
+  - systemctl enable docker
+  - systemctl start docker
+  - usermod -aG docker opc
+  - usermod -aG docker docassembler
+
+  # Setup directories
+  - mkdir -p /opt/docassembler /opt/scripts /opt/backups /var/log/docassembler
+
+  # Setup Nginx
+  - rm -f /etc/nginx/sites-enabled/default
+  - ln -sf /etc/nginx/sites-available/docassembler /etc/nginx/sites-enabled/
+  - systemctl enable nginx
+  - systemctl start nginx
+
+  # Setup Fail2Ban
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+
+  # Setup UFW
+  - ufw --force enable
+  - ufw allow ssh
+  - ufw allow http
+  - ufw allow https
+
+  # Setup SSL certificates (placeholder)
+  - mkdir -p /etc/letsencrypt/live/app.${domain_name}
+  - mkdir -p /etc/letsencrypt/live/api.${domain_name}
+
+  # Setup cron jobs
+  - echo "0 2 * * * /opt/scripts/backup.sh" | crontab -
+  - echo "*/5 * * * * /opt/scripts/health-check.sh > /var/log/docassembler/health.log 2>&1" | crontab -
+
+  # Restart services
+  - systemctl reload nginx
+  - systemctl restart fail2ban
+
+final_message: "DocAssembler application server setup complete!"
+
