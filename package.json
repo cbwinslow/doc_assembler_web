@@ -1,0 +1,56 @@
+{
+  "name": "doc-assembler-web",
+  "version": "1.0.0",
+  "description": "Modern document assembly platform with AI capabilities",
+  "author": "cbwinslow <blaine.winslow@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "deploy:staging": "./scripts/deployment/deploy-staging.sh",
+    "deploy:production": "./scripts/deployment/deploy-production.sh",
+    "db:migrate": "npm run db:migrate --workspace=packages/database",
+    "db:seed": "npm run db:seed --workspace=packages/database",
+    "ai:index": "./scripts/ai/index-documents.sh",
+    "ai:search": "./scripts/ai/search-documents.sh"
+  },
+  "devDependencies": {
+    "turbo": "^1.13.0",
+    "prettier": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cbwinslow/doc_assembler_web.git"
+  },
+  "keywords": [
+    "document-assembly",
+    "ai",
+    "react",
+    "nodejs",
+    "typescript",
+    "vector-database",
+    "cloud"
+  ]
+}
+
