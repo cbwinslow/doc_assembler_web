@@ -276,8 +276,8 @@ write_files:
       # Deployment script for DocAssembler
       set -e
       
-      IMAGE_BACKEND=${1:-"ghcr.io/docassembler/backend:latest"}
-      IMAGE_FRONTEND=${2:-"ghcr.io/docassembler/frontend:latest"}
+      IMAGE_BACKEND=$${1:-"ghcr.io/docassembler/backend:latest"}
+      IMAGE_FRONTEND=$${2:-"ghcr.io/docassembler/frontend:latest"}
       
       echo "Deploying DocAssembler..."
       echo "Backend image: $IMAGE_BACKEND"

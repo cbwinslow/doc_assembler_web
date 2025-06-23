@@ -1,0 +1,48 @@
+# Oracle Cloud Infrastructure Configuration
+# You need to replace these with your actual OCI credentials
+oci_tenancy_ocid      = "ocid1.tenancy.oc1..your-tenancy-ocid"
+oci_user_ocid         = "ocid1.user.oc1..your-user-ocid"
+oci_fingerprint       = "your-key-fingerprint"
+oci_private_key_path  = "~/.oci/oci_api_key.pem"
+oci_region           = "us-ashburn-1"
+oci_compartment_id   = "ocid1.compartment.oc1..your-compartment-ocid"
+
+# Cloudflare Configuration
+# You need to replace these with your actual Cloudflare credentials
+cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_zone_id   = "your-cloudflare-zone-id"
+
+# Application Configuration
+environment   = "prod"
+domain_name   = "docassembler.com"
+subdomain     = "app"
+
+# Database Configuration
+db_name     = "docassembler"
+db_username = "docassembler_user"
+db_password = "your-secure-database-password"
+
+# Application Secrets
+jwt_secret     = "your-jwt-secret-key"
+openai_api_key = "your-openai-api-key"
+cohere_api_key = "your-cohere-api-key"  # Optional
+
+# Email Configuration (Optional)
+smtp_host     = "smtp.gmail.com"
+smtp_port     = 587
+smtp_username = "your-email@gmail.com"
+smtp_password = "your-app-password"
+
+# Scaling Configuration
+app_server_count      = 2
+auto_scaling_enabled  = true
+min_app_servers       = 2
+max_app_servers       = 10
+cpu_threshold         = 70
+memory_threshold      = 80
+
+# Monitoring and Backup
+enable_monitoring        = true
+enable_backups          = true
+backup_retention_days   = 30
+
