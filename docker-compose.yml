@@ -1,89 +1,162 @@
 version: '3.8'
 
-services:
-  mcp_server:
-    build:
-      context: ./packages/mcp_server
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - MCP_API_KEY=${MCP_API_KEY}
-      - POSTGRES_DSN=${POSTGRES_DSN}
-      - REDIS_URL=${REDIS_URL}
-      - PLAYWRIGHT_BROWSERS_PATH=/app/data/playwright
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - ./data:/app/data
-      - playwright_data:/app/data/playwright
-    restart: unless-stopped
-    networks:
-      - mcp_network
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-        reservations:
-          memory: 1G
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
 
+services:
+  # PostgreSQL Database with pgvector extension
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
+    container_name: doc-assembler-postgres
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-mcp}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mcppassword}
-      - POSTGRES_DB=${POSTGRES_DB:-mcpdb}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_DB: doc_assembler_dev
+      POSTGRES_USER: cbwinslow
+      POSTGRES_PASSWORD: Temp1234!
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - mcp_network
+      - doc-assembler-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cbwinslow -d doc_assembler_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
+  # Redis Cache and Queue
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
+    container_name: doc-assembler-redis
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
-      - mcp_network
-    deploy:
-      resources:
-        limits:
-          memory: 1.5G
-        reservations:
-          memory: 512M
+      - doc-assembler-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: doc-assembler-chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@cloudcurio.cc}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_PORT=8000
+      - CHROMA_DB_IMPL=duckdb+parquet
+      - CHROMA_PERSIST_DIRECTORY=/chroma/chroma
+    networks:
+      - doc-assembler-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: doc-assembler-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - doc-assembler-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Mailhog (Email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: doc-assembler-mailhog
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    networks:
+      - doc-assembler-network
+    logging: *default-logging
+
+  # PgAdmin (Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: doc-assembler-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@docassembler.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
-      - mcp_network
+      - doc-assembler-network
+    logging: *default-logging
+
+  # Redis Commander (Redis Management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: doc-assembler-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - doc-assembler-network
+    logging: *default-logging
 
 volumes:
   postgres_data:
-    driver: local
+    name: doc_assembler_postgres_data
   redis_data:
-    driver: local
-  playwright_data:
-    driver: local
+    name: doc_assembler_redis_data
+  chromadb_data:
+    name: doc_assembler_chromadb_data
+  minio_data:
+    name: doc_assembler_minio_data
+  pgadmin_data:
+    name: doc_assembler_pgadmin_data
+  backend_logs:
+    name: doc_assembler_backend_logs
 
 networks:
-  mcp_network:
+  doc-assembler-network:
+    name: doc_assembler_network
     driver: bridge
     ipam:
       driver: default
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: 172.30.0.0/16
 

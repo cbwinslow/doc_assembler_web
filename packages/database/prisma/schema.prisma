@@ -1,0 +1,467 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enable pgvector extension for vector similarity search
+generator vectorSearch {
+  provider = "prisma-client-js"
+}
+
+// User Management
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String?  @unique
+  firstName   String?
+  lastName    String?
+  avatar      String?
+  role        UserRole @default(USER)
+  isVerified  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  
+  // Authentication
+  password    String?
+  authProvider AuthProvider @default(LOCAL)
+  authId      String?
+  
+  // Profile
+  bio         String?
+  company     String?
+  jobTitle    String?
+  location    String?
+  website     String?
+  timezone    String   @default("UTC")
+  language    String   @default("en")
+  
+  // Settings
+  preferences Json     @default("{}")
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  // Relations
+  documents     Document[]
+  projects      Project[]
+  templates     Template[]
+  teams         TeamMember[]
+  activities    Activity[]
+  apiKeys       ApiKey[]
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+  
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("refresh_tokens")
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  key         String   @unique
+  permissions Json     @default("[]")
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("api_keys")
+}
+
+// Team Management
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatar      String?
+  settings    Json     @default("{}")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  members  TeamMember[]
+  projects Project[]
+  
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String   @id @default(cuid())
+  userId String
+  teamId String
+  role   TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+// Project Management
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  settings    Json          @default("{}")
+  metadata    Json          @default("{}")
+  userId      String
+  teamId      String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  documents Document[]
+  templates Template[]
+  
+  @@map("projects")
+}
+
+// Document Management
+model Document {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  type         DocumentType
+  status       DocumentStatus @default(PROCESSING)
+  
+  // File information
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  checksum     String
+  
+  // Storage
+  storageProvider StorageProvider
+  storagePath     String
+  storageUrl      String?
+  
+  // Content
+  content      String?
+  extractedText String?
+  summary      String?
+  
+  // Metadata
+  metadata     Json           @default("{}")
+  tags         Tag[]
+  
+  // AI Processing
+  embeddings   Float[]        // Vector embeddings
+  aiMetadata   Json           @default("{}")
+  
+  // Relations
+  userId       String
+  projectId    String?
+  parentId     String?        // For document versions/revisions
+  
+  // Processing
+  processingJobs ProcessingJob[]
+  
+  // Timestamps
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  processedAt  DateTime?
+  
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent   Document?  @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions Document[] @relation("DocumentVersions")
+  
+  @@map("documents")
+}
+
+// Document Processing
+model ProcessingJob {
+  id         String           @id @default(cuid())
+  documentId String
+  type       ProcessingType
+  status     ProcessingStatus @default(PENDING)
+  
+  // Processing details
+  input      Json             @default("{}")
+  output     Json             @default("{}")
+  error      String?
+  progress   Int              @default(0)
+  
+  // Queue information
+  queueId    String?
+  priority   Int              @default(5)
+  attempts   Int              @default(0)
+  maxAttempts Int             @default(3)
+  
+  // Timestamps
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  startedAt  DateTime?
+  completedAt DateTime?
+  failedAt   DateTime?
+  
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@map("processing_jobs")
+}
+
+// Template System
+model Template {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  type        TemplateType
+  category    String?
+  
+  // Template content
+  content     Json
+  schema      Json           @default("{}")
+  variables   Json           @default("[]")
+  
+  // Settings
+  isPublic    Boolean        @default(false)
+  isActive    Boolean        @default(true)
+  version     String         @default("1.0.0")
+  
+  // Relations
+  userId      String
+  projectId   String?
+  parentId    String?        // For template versions
+  
+  // Usage tracking
+  usageCount  Int            @default(0)
+  
+  // Timestamps
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent   Template?  @relation("TemplateVersions", fields: [parentId], references: [id])
+  versions Template[] @relation("TemplateVersions")
+  
+  @@map("templates")
+}
+
+// Tagging System
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#3B82F6")
+  createdAt DateTime @default(now())
+  
+  documents Document[]
+  
+  @@map("tags")
+}
+
+// Activity Logging
+model Activity {
+  id         String       @id @default(cuid())
+  userId     String
+  type       ActivityType
+  action     String
+  entity     String?      // e.g., "document", "project"
+  entityId   String?
+  metadata   Json         @default("{}")
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime     @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("activities")
+}
+
+// Analytics and Metrics
+model Analytics {
+  id        String   @id @default(cuid())
+  metric    String
+  value     Float
+  dimensions Json    @default("{}")
+  timestamp DateTime @default(now())
+  
+  @@index([metric, timestamp])
+  @@map("analytics")
+}
+
+// Vector Search Index (for AI/ML)
+model VectorIndex {
+  id         String   @id @default(cuid())
+  entityType String   // "document", "template", etc.
+  entityId   String
+  embedding  Float[]  // Vector embedding
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([entityType, entityId])
+  @@map("vector_index")
+}
+
+// Webhook Management
+model Webhook {
+  id          String      @id @default(cuid())
+  url         String
+  events      String[]    // Array of event types
+  secret      String?
+  isActive    Boolean     @default(true)
+  lastTriggered DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  deliveries WebhookDelivery[]
+  
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id         String            @id @default(cuid())
+  webhookId  String
+  event      String
+  payload    Json
+  status     WebhookStatus     @default(PENDING)
+  response   String?
+  statusCode Int?
+  attempts   Int               @default(0)
+  createdAt  DateTime          @default(now())
+  deliveredAt DateTime?
+  
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  
+  @@map("webhook_deliveries")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+  GUEST
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+  AUTH0
+  MICROSOFT
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum DocumentType {
+  PDF
+  WORD
+  TEXT
+  MARKDOWN
+  HTML
+  IMAGE
+  OTHER
+}
+
+enum DocumentStatus {
+  UPLOADING
+  PROCESSING
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+enum StorageProvider {
+  CLOUDFLARE_R2
+  ORACLE_CLOUD
+  AWS_S3
+  LOCAL
+}
+
+enum ProcessingType {
+  TEXT_EXTRACTION
+  OCR
+  EMBEDDING_GENERATION
+  SUMMARIZATION
+  CLASSIFICATION
+  TRANSLATION
+}
+
+enum ProcessingStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TemplateType {
+  DOCUMENT
+  REPORT
+  FORM
+  EMAIL
+  PRESENTATION
+}
+
+enum ActivityType {
+  AUTH
+  DOCUMENT
+  PROJECT
+  TEMPLATE
+  TEAM
+  SYSTEM
+}
+
+enum WebhookStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+}
+
