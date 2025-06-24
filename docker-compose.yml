@@ -53,7 +53,7 @@ services:
     image: chromadb/chroma:latest
     container_name: doc-assembler-chromadb
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - chromadb_data:/chroma/chroma
     environment:
@@ -137,6 +137,75 @@ services:
       - doc-assembler-network
     logging: *default-logging
 
+  # MCP Server (Main Application)
+  mcp_server:
+    build:
+      context: ./packages/mcp_server
+      dockerfile: Dockerfile
+      target: production
+    image: mcp_server:latest
+    container_name: doc-assembler-mcp-server
+    environment:
+      # Production settings
+      - DEBUG=false
+      - ENVIRONMENT=production
+      - PYTHONUNBUFFERED=1
+      # Server settings
+      - PORT=8000
+      - WORKERS=4
+      - LOG_LEVEL=INFO
+      # Database settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=doc_assembler_dev
+      - POSTGRES_USER=cbwinslow
+      - POSTGRES_PASSWORD=Temp1234!
+      - DATABASE_URL=postgresql://cbwinslow:Temp1234!@postgres:5432/doc_assembler_dev
+      # Redis settings
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - mcp_data:/app/data
+      - mcp_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - doc-assembler-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Caddy Web Server and Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: doc-assembler-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - doc-assembler-network
+    depends_on:
+      - mcp_server
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
     name: doc_assembler_postgres_data
@@ -150,6 +219,14 @@ volumes:
     name: doc_assembler_pgadmin_data
   backend_logs:
     name: doc_assembler_backend_logs
+  mcp_data:
+    name: doc_assembler_mcp_data
+  mcp_logs:
+    name: doc_assembler_mcp_logs
+  caddy_data:
+    name: doc_assembler_caddy_data
+  caddy_config:
+    name: doc_assembler_caddy_config
 
 networks:
   doc-assembler-network:
