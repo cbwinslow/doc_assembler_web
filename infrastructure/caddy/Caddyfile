@@ -1,0 +1,22 @@
+# Doc Assembler Caddyfile
+# Basic reverse proxy configuration
+
+# Main application
+localhost:80 {
+    reverse_proxy mcp_server:8000
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# API endpoint
+localhost:80/api/* {
+    reverse_proxy mcp_server:8000
+}
+
+# Health check endpoint
+localhost:80/health {
+    reverse_proxy mcp_server:8000
+}
+
