@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 # Install system dependencies required for building Python packages
 RUN apt-get update && apt-get install -y \
@@ -23,7 +23,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-dev
 
 # Stage 2: Production image
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -123,7 +123,7 @@ EXPOSE ${PORT}
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Stage 1: Build dependencies
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 # Install system dependencies required for building Python packages
 RUN apt-get update && apt-get install -y \
@@ -260,7 +260,7 @@ RUN chmod +x /app/scripts/wait-for-it.sh
 CMD ["/app/start.sh"]
 
 # Stage 1: Build dependencies
-FROM python:3.12-slim as builder
+FROM python:3.13-slim as builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
