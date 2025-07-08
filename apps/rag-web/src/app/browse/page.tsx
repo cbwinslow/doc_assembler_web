@@ -9,6 +9,11 @@ interface DocMeta {
   createdAt?: string;
 }
 
+/**
+ * Displays a table of documents fetched from an API, allowing users to browse document metadata.
+ *
+ * Fetches document metadata on mount and renders each document's title (as a link), type, creation date, and an options button in a tabular format.
+ */
 export default function BrowsePage() {
   const [docs, setDocs] = useState<DocMeta[]>([]);
 

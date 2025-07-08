@@ -7,6 +7,11 @@ interface DocMeta {
   filename?: string;
 }
 
+/**
+ * Renders a page that allows users to select documents and generate a report based on their selections.
+ *
+ * Fetches available documents from an API, displays them as selectable checkboxes, and provides a button to generate a report using the selected documents. The generated report is displayed in a read-only textarea.
+ */
 export default function ReportPage() {
   const [docs, setDocs] = useState<DocMeta[]>([]);
   const [selected, setSelected] = useState<string[]>([]);

@@ -10,6 +10,11 @@ const program = new Command();
 program.argument('<dir>', 'Directory to ingest').parse(process.argv);
 const [dir] = program.args;
 
+/**
+ * Processes all `.txt` and `.md` files in the specified directory, splits their content into overlapping text chunks, generates embeddings for each chunk, and stores the embeddings with associated metadata.
+ *
+ * Logs progress after each file is ingested. Exits the process with a failure code if an error occurs.
+ */
 async function ingest() {
   const files = await fs.readdir(dir);
   for (const file of files) {

@@ -11,6 +11,11 @@ program
 
 const opts = program.opts();
 
+/**
+ * Converts a JSON file specified by the input option to a CSV file at the output path.
+ *
+ * Reads the input JSON file, parses its contents, converts the data to CSV format, and writes the result to the output file.
+ */
 async function convert() {
   const data = JSON.parse(await fs.readFile(opts.input, 'utf8'));
   const csv = parse(data);
