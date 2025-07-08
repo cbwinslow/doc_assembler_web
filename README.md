@@ -51,11 +51,17 @@ An intelligent document assembly system that combines targeted web crawling, AI-
    - Template-based document generation
    - Metadata handling
 
-3. **Web Interface** (`services/web`):
-   - React/Vite-based web application
+3. **Web Interface** (`services/web` and `apps/rag-web`):
+   - React/Vite application for core features
+   - Next.js RAG interface with data browser and report writer
    - Real-time processing feedback
    - Document preview and editing
-   - Configuration management
+ - Configuration management
+
+4. **RAG Database** (`apps/backend`):
+   - LangChain-based ingestion scripts for vector storage
+   - Retrieval-Augmented Generation API endpoints
+   - Embedding models configured for similarity search
 
 ## Database Recommendation
 

@@ -21,6 +21,7 @@ import userRoutes from '@/routes/users.js';
 import documentRoutes from '@/routes/documents.js';
 import searchRoutes from '@/routes/search.js';
 import analyticsRoutes from '@/routes/analytics.js';
+import ragRoutes from '@/routes/rag.js';
 
 // Load environment variables
 dotenv.config();
@@ -130,6 +131,7 @@ app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/documents', authMiddleware, documentRoutes);
 app.use('/api/search', authMiddleware, searchRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
+app.use('/api/rag', authMiddleware, ragRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
