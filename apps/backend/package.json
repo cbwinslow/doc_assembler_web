@@ -47,7 +47,8 @@
     "mammoth": "^1.6.0",
     "tesseract.js": "^5.0.4",
     "@aws-sdk/client-s3": "^3.478.0",
-    "@oracle/oci-sdk": "^1.79.0"
+    "@oracle/oci-sdk": "^1.79.0",
+    "json2csv": "^7.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
