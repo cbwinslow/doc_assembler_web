@@ -147,7 +147,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-dev
 
 # Stage 2: Production image
-FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.53.0-jammy
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -282,7 +282,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-dev --no-root
 
 # Stage 2: Production image
-FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.53.0-jammy
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
