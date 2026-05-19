@@ -27,7 +27,7 @@
     "ai:search": "./scripts/ai/search-documents.sh"
   },
   "devDependencies": {
-    "turbo": "^1.13.0",
+    "turbo": "^2.9.14",
     "prettier": "^3.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
